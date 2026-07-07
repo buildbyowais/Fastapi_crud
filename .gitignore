@@ -1,4 +1,6 @@
 .crud_env/
-
-alembic/__pycache__/
-app/core/__pycache__/
+.env
+alembic/__pycache__
+app/core/__pycache__
+app/models/__pycache__
+alembic/versions/
