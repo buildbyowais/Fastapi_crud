@@ -11,7 +11,8 @@ from sqlalchemy import pool
 from alembic import context
 from app.core.database import Base
 from dotenv import load_dotenv
-from app.models import todo
+from app.models.todo import Todo
+from app.models.user import User
 import os
 
 load_dotenv()
