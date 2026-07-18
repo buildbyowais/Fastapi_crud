@@ -1,71 +1,62 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
 from app.core.database import get_db
-from app.schemas.todo import (
-    TodoCreate,
-    TodoResponse,
-)
-from app.crud.todo import (
-    create_todo,
-    get_todos,
-    get_todo,
-    update_todo,
-    delete_todo,
-)
+from app.schemas.todo import TodoCreate,TodoResponse
+from app.crud.todo import *
+from app.api.user import get_current_user
+from app.models.user import User
 
-router = APIRouter(
-    prefix="/todos",
-    tags=["Todos"],
-)
+router = APIRouter(prefix="/todo",tags=["titan_todos"])
+
+@router.post("/",response_model=TodoResponse)
+def create(todo:TodoCreate,db:Session=Depends(get_db),current_user: User = Depends(get_current_user)):
+    return create_todo(db,todo,user_id=current_user.id)
 
 
-@router.post("/", response_model=TodoResponse)
-def create(todo: TodoCreate, db: Session = Depends(get_db)):
-    return create_todo(db, todo)
+@router.get('/')
+def get_all(db:Session=Depends(get_db),current_user: User = Depends(get_current_user)):
+    return get_todos(db, user_id=current_user.id)
 
 
-@router.get("/", response_model=list[TodoResponse])
-def read_all(db: Session = Depends(get_db)):
-    return get_todos(db)
-
-
-@router.get("/{todo_id}", response_model=TodoResponse)
-def read_one(todo_id: int, db: Session = Depends(get_db)):
-    todo = get_todo(db, todo_id)
-
+@router.get("/{todo_id}",response_model=TodoResponse)
+def get(todo_id:int,db:Session=Depends(get_db),current_user: User = Depends(get_current_user)):
+    todo = get_todo(db,todo_id,user_id=current_user.id)
     if not todo:
         raise HTTPException(
-            status_code=404,
-            detail="Todo not found",
+            status=404,
+            detail="Todo not found"
         )
-
+    
     return todo
 
-
-@router.put("/{todo_id}", response_model=TodoResponse)
-def update(todo_id: int, todo: TodoCreate, db: Session = Depends(get_db)):
-    updated = update_todo(db, todo_id, todo)
-
+@router.put("/{todo_id}")
+def update_todo_route(
+    todo_id:int,
+    todo:TodoCreate,
+    db:Session=Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    updated = update_todo(db,todo_id,todo,user_id=current_user.id)
     if not updated:
         raise HTTPException(
-            status_code=404,
-            detail="Todo not found",
+            status=404,
+            details = "Todo not Found"
         )
-
     return updated
 
-
 @router.delete("/{todo_id}")
-def delete(todo_id: int, db: Session = Depends(get_db)):
-    deleted = delete_todo(db, todo_id)
+def delete(todo_id:int,db:Session=Depends(get_db),current_user: User = Depends(get_current_user)):
+    deleted = delete_todo(
+        db,todo_id, user_id=current_user.id
+    )
 
     if not deleted:
-        raise HTTPException(
+        return HTTPException(
             status_code=404,
-            detail="Todo not found",
+            status = "Todo not deleted"
         )
-
+    
     return {
         "message": "Todo deleted successfully"
     }
